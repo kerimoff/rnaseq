@@ -131,8 +131,8 @@ Channel.fromPath("$baseDir/assets/where_are_my_files.txt")
        .into{ch_where_trim_galore; ch_where_star; ch_where_hisat2; ch_where_hisat2_sort}
 
 // Define regular variables so that they can be overwritten
-clip_r1 = params.five_prime_clip_r1
-clip_r2 = params.five_prime_clip_r2
+five_prime_clip_r1 = params.five_prime_clip_r1
+five_prime_clip_r2 = params.five_prime_clip_r2
 three_prime_clip_r1 = params.three_prime_clip_r1
 three_prime_clip_r2 = params.three_prime_clip_r2
 forward_stranded = params.forward_stranded
