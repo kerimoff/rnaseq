@@ -1,6 +1,6 @@
-FROM czbiohub/base
-MAINTAINER Phil Ewels <phil.ewels@scilifelab.se>
-LABEL authors="phil.ewels@scilifelab.se" \
+FROM nfcore/base
+MAINTAINER Olga Botvinnik <olga.botvinnik@czbiohub.org>
+LABEL authors="olga.botvinnik@czbiohub.org" \
     description="Docker image containing all requirements for the czbiohub/rnaseq pipeline"
 
 COPY environment.yml /
