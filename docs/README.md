@@ -1,6 +1,6 @@
-# nfcore/rnaseq Documentation
+# czbiohub/rnaseq Documentation
 
-The nfcore/rnaseq documentation is split into the following files:
+The czbiohub/rnaseq documentation is split into the following files:
 
 
 1. [Installation](installation.md)
