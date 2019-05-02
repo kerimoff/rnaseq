@@ -581,6 +581,7 @@ process fastqc {
  */
 process fastp {
     tag "$name"
+    container 'quay.io/biocontainers/fastp:0.20.0--hdbcaa40_0'
     publishDir "${params.outdir}/fastp", mode: 'copy',
         saveAs: {filename ->
             if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
@@ -595,7 +596,7 @@ process fastp {
     file wherearemyfiles from ch_where_trim_galore.collect()
 
     output:
-    set val(name), file("*fq.gz") into trimmed_reads, trimmed_reads_salmon
+    set val(name), file("*fq.gz") into trimmed_reads, trimmed_reads_salmon, trimmed_reads_fastqc
     file "*trimming_report.txt" into trimgalore_results
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
     file "where_are_my_files.txt"
@@ -623,7 +624,6 @@ process fastp {
           --out1 ${name}_fastp_trimmed_R1.fq.gz \
           --html ${name}_fastp.html \
           --json ${name}_fastp.json
-        fastqc -q ${name}_fastp_trimmed_R1.fq.gz
         """
     } else {
         """
@@ -640,9 +640,31 @@ process fastp {
           --out2 ${name}_fastp_trimmed_R2.fq.gz \
           --html ${name}_fastp.html \
           --json ${name}_fastp.json
-        fastqc -q ${name}_fastp_trimmed_R1.fq.gz ${name}_fastp_trimmed_R2.fq.gz
         """
     }
+}
+
+/*
+ * STEP 1 - FastQC on trimmed reads
+ */
+process fastqc_trimmed {
+    tag "$name"
+    publishDir "${params.outdir}/fastqc_trimmed", mode: 'copy',
+        saveAs: {filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"}
+
+    when:
+    !params.skip_qc && !params.skip_fastqc
+
+    input:
+    set val(name), file(reads) from trimmed_reads_fastqc
+
+    output:
+    file "*_fastqc.{zip,html}" into fastqc_trimmed_results
+
+    script:
+    """
+    fastqc -q $reads
+    """
 }
 
 
@@ -1411,6 +1433,7 @@ process multiqc {
     input:
     file multiqc_config from ch_multiqc_config
     file (fastqc:'fastqc/*') from fastqc_results.collect().ifEmpty([])
+    file (fastqc:'fastqc_trimmed/*') from fastqc_trimmed_results.collect().ifEmpty([])
     file ('trimgalore/*') from trimgalore_results.collect()
     file ('alignment/*') from alignment_logs.collect()
     file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
