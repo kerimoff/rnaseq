@@ -1,11 +1,11 @@
 #!/usr/bin/env nextflow
 /*
 ===============================================================
- nf-core/rnaseq
+ czbiohub/rnaseq
 ===============================================================
  RNA-Seq Analysis Pipeline. Started March 2016.
  #### Homepage / Documentation
- https://github.com/nf-core/rnaseq
+ https://github.com/czbiohub/rnaseq
  #### Authors
  Phil Ewels @ewels <phil.ewels@scilifelab.se>
  Rickard Hammarén @Hammarn  <rickard.hammaren@scilifelab.se>
@@ -21,14 +21,14 @@ def helpMessage() {
         | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                               `._,._,\'
 
-     nf-core/rnaseq : RNA-Seq Best Practice v${workflow.manifest.version}
+     czbiohub/rnaseq : RNA-Seq Best Practice v${workflow.manifest.version}
     =======================================================
 
     Usage:
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/rnaseq --reads '*_R{1,2}.fastq.gz' --genome GRCh37 -profile uppmax
+    nextflow run czbiohub/rnaseq --reads '*_R{1,2}.fastq.gz' --genome GRCh37 -profile uppmax
 
     Mandatory arguments:
       --reads                       Path to input data (must be surrounded with quotes)
@@ -276,7 +276,7 @@ log.info """=======================================================
     | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                           `._,._,\'
 
- nf-core/rnaseq : RNA-Seq Best Practice v${workflow.manifest.version}
+ czbiohub/rnaseq : RNA-Seq Best Practice v${workflow.manifest.version}
 ======================================================="""
 def summary = [:]
 summary['Run Name']     = custom_runName ?: workflow.runName
@@ -1362,7 +1362,7 @@ process workflow_summary_mqc {
     id: 'nfcore-rnaseq-summary'
     description: " - this information is collected when the pipeline is started."
     section_name: 'nfcore/rnaseq Workflow Summary'
-    section_href: 'https://github.com/nf-core/rnaseq'
+    section_href: 'https://github.com/czbiohub/rnaseq'
     plot_type: 'html'
     data: |
         <dl class=\"dl-horizontal\">
