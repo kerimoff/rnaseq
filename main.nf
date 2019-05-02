@@ -597,8 +597,7 @@ process fastp {
 
     output:
     set val(name), file("*fq.gz") into trimmed_reads, trimmed_reads_salmon, trimmed_reads_fastqc
-    file "*trimming_report.txt" into trimgalore_results
-    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
+    file "*_fastp.{html,json}" into fastp_results
     file "where_are_my_files.txt"
 
 
@@ -1434,7 +1433,7 @@ process multiqc {
     file multiqc_config from ch_multiqc_config
     file (fastqc:'fastqc/*') from fastqc_results.collect().ifEmpty([])
     file (fastqc:'fastqc_trimmed/*') from fastqc_trimmed_results.collect().ifEmpty([])
-    file ('trimgalore/*') from trimgalore_results.collect()
+    file ('fastp/*') from fastp_results.collect()
     file ('alignment/*') from alignment_logs.collect()
     file ('rseqc/*') from rseqc_results.collect().ifEmpty([])
     file ('rseqc/*') from genebody_coverage_results.collect().ifEmpty([])
