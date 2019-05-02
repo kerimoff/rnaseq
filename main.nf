@@ -131,8 +131,8 @@ Channel.fromPath("$baseDir/assets/where_are_my_files.txt")
        .into{ch_where_trim_galore; ch_where_star; ch_where_hisat2; ch_where_hisat2_sort}
 
 // Define regular variables so that they can be overwritten
-clip_r1 = params.clip_r1
-clip_r2 = params.clip_r2
+clip_r1 = params.five_prime_clip_r1
+clip_r2 = params.five_prime_clip_r2
 three_prime_clip_r1 = params.three_prime_clip_r1
 three_prime_clip_r2 = params.three_prime_clip_r2
 forward_stranded = params.forward_stranded
@@ -577,7 +577,7 @@ process fastqc {
 
 
 /*
- * STEP 2 - Trim Galore!
+ * STEP 2 - Trim reads with fastp and run FASTQC on the output
  */
 process fastp {
     tag "$name"
@@ -623,7 +623,7 @@ process fastp {
           --out1 ${name}_fastp_trimmed_R1.fq.gz \
           --html ${name}_fastp.html \
           --json ${name}_fastp.json
-        fastqc -q
+        fastqc -q ${name}_fastp_trimmed_R1.fq.gz
         """
     } else {
         """
@@ -640,7 +640,7 @@ process fastp {
           --out2 ${name}_fastp_trimmed_R2.fq.gz \
           --html ${name}_fastp.html \
           --json ${name}_fastp.json
-        fastqc -q $reads
+        fastqc -q ${name}_fastp_trimmed_R1.fq.gz ${name}_fastp_trimmed_R2.fq.gz
         """
     }
 }
