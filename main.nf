@@ -61,13 +61,13 @@ def helpMessage() {
       --saveAlignedIntermediates    Save the BAM files from the Aligment step  - not done by default
 
     Trimming options
-      --clip_r1 [int]               Instructs Trim Galore to remove bp from the 5' end of read 1 (or single-end reads)
-      --clip_r2 [int]               Instructs Trim Galore to remove bp from the 5' end of read 2 (paired-end reads only)
+      --five_prime_clip_r1 [int]               Instructs Trim Galore to remove bp from the 5' end of read 1 (or single-end reads)
+      --five_prime_clip_r2 [int]               Instructs Trim Galore to remove bp from the 5' end of read 2 (paired-end reads only)
       --three_prime_clip_r1 [int]   Instructs Trim Galore to remove bp from the 3' end of read 1 AFTER adapter/quality trimming has been performed
       --three_prime_clip_r2 [int]   Instructs Trim Galore to re move bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed
 
     Presets:
-      --pico                        Sets trimming and standedness settings for the SMARTer Stranded Total RNA-Seq Kit - Pico Input kit. Equivalent to: --forward_stranded --clip_r1 3 --three_prime_clip_r2 3
+      --pico                        Sets trimming and standedness settings for the SMARTer Stranded Total RNA-Seq Kit - Pico Input kit. Equivalent to: --forward_stranded --five_prime_clip_r1 3 --three_prime_clip_r2 3
       --fcExtraAttributes           Define which extra parameters should also be included in featureCounts (default: gene_names)
 
     Other options:
@@ -141,8 +141,8 @@ unstranded = params.unstranded
 
 // Preset trimming options
 if (params.pico){
-    clip_r1 = 3
-    clip_r2 = 0
+    five_prime_clip_r1 = 3
+    five_prime_clip_r2 = 0
     three_prime_clip_r1 = 0
     three_prime_clip_r2 = 3
     forward_stranded = true
@@ -285,8 +285,8 @@ summary['Data Type']    = params.singleEnd ? 'Single-End' : 'Paired-End'
 summary['Genome']       = params.genome
 if( params.pico ) summary['Library Prep'] = "SMARTer Stranded Total RNA-Seq Kit - Pico Input"
 summary['Strandedness'] = ( unstranded ? 'None' : forward_stranded ? 'Forward' : reverse_stranded ? 'Reverse' : 'None' )
-summary['Trim R1'] = clip_r1
-summary['Trim R2'] = clip_r2
+summary['Trim R1'] = five_prime_clip_r1
+summary['Trim R2'] = five_prime_clip_r2
 summary["Trim 3' R1"] = three_prime_clip_r1
 summary["Trim 3' R2"] = three_prime_clip_r2
 if(params.aligner == 'star'){
@@ -453,7 +453,7 @@ if(params.run_tx_exp_quant && params.run_txrevise){
 
         output:
         file "${txrevise_gff.baseName}.fa" into txrevise_fasta
-        
+
         script:
         """
         gffread -w ${txrevise_gff.baseName}.fa -g $genome_fasta $txrevise_gff
@@ -473,11 +473,11 @@ if(params.run_tx_exp_quant ){
                    saveAs: { params.saveReference ? it : null }, mode: 'copy'
 
         input:
-        file fasta from tx_fasta_ch == null ? tx_fasta_ch : tx_fasta_ch.mix(txrevise_fasta)  
+        file fasta from tx_fasta_ch == null ? tx_fasta_ch : tx_fasta_ch.mix(txrevise_fasta)
 
         output:
         file "${fasta.baseName}.index" into salmon_index
-        
+
         script:
         """
         salmon index -t ${fasta} -i ${fasta.baseName}.index
@@ -520,7 +520,7 @@ if (params.run_exon_quant){
 
         output:
         file "${gtf.baseName}.patched_contigs.DEXSeq.gff" into gff_dexseq
-        
+
         script:
         """
         cat $gtf | sed 's/chrM/chrMT/;s/chr//' > ${gtf.baseName}.patched_contigs.gtf
@@ -579,9 +579,9 @@ process fastqc {
 /*
  * STEP 2 - Trim Galore!
  */
-process trim_galore {
+process fastp {
     tag "$name"
-    publishDir "${params.outdir}/trim_galore", mode: 'copy',
+    publishDir "${params.outdir}/fastp", mode: 'copy',
         saveAs: {filename ->
             if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
             else if (filename.indexOf("trimming_report.txt") > 0) "logs/$filename"
@@ -602,17 +602,45 @@ process trim_galore {
 
 
     script:
-    c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
-    c_r2 = clip_r2 > 0 ? "--clip_r2 ${clip_r2}" : ''
-    tpc_r1 = three_prime_clip_r1 > 0 ? "--three_prime_clip_r1 ${three_prime_clip_r1}" : ''
-    tpc_r2 = three_prime_clip_r2 > 0 ? "--three_prime_clip_r2 ${three_prime_clip_r2}" : ''
+    // How much to trim from 5' end
+    five_prime_clip_r1_flag = five_prime_clip_r1 > 0 ? "--trim_front1 ${clip_r1}" : ''
+    five_prime_clip_r2_flag = five_prime_clip_r2 > 0 ? "--trim_front2 ${clip_r2}" : ''
+    // How much to trim from 3' end
+    three_prime_clip_r1_flag = three_prime_clip_r1 > 0 ? "--trim_tail1 ${three_prime_clip_r1}" : ''
+    three_prime_clip_r2_flag = three_prime_clip_r2 > 0 ? "--trim_tail2 ${three_prime_clip_r2}" : ''
+
+    // Separate Read1 and Read2
+    read1 = reads[0]
+    read2 = reads[1]
     if (params.singleEnd) {
         """
-        trim_galore --fastqc --gzip $c_r1 $tpc_r1 $reads
+        fastp \
+          --thread ${task.cpus} \
+          $five_prime_clip_r1_flag \
+          $three_prime_clip_r1_flag \
+          --in1 $read1 \
+          --overrepresentation_analysis \
+          --out1 ${name}_fastp_trimmed_R1.fq.gz \
+          --html ${name}_fastp.html \
+          --json ${name}_fastp.json
+        fastqc -q
         """
     } else {
         """
-        trim_galore --paired --fastqc --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $reads
+        fastp \
+          --thread ${task.cpus} \
+          $five_prime_clip_r1_flag \
+          $five_prime_clip_r2_flag \
+          $three_prime_clip_r1_flag \
+          $three_prime_clip_r2_flag \
+          --in1 $read1 \
+          --in2 $read2 \
+          --overrepresentation_analysis \
+          --out1 ${name}_fastp_trimmed_R1.fq.gz \
+          --out2 ${name}_fastp_trimmed_R2.fq.gz \
+          --html ${name}_fastp.html \
+          --json ${name}_fastp.json
+        fastqc -q $reads
         """
     }
 }
@@ -684,7 +712,7 @@ if(params.aligner == 'star'){
             --readFilesCommand zcat \\
             --runDirPerm All_RWX \\
              --outFileNamePrefix $prefix $seqCenter
-            
+
         samtools index ${prefix}Aligned.sortedByCoord.out.bam
         """
     }
@@ -806,7 +834,7 @@ if(params.run_tx_exp_quant){
 
         output:
         set val(index.baseName), file("${samplename}.quant.sf") into salmon_merge_tx_ch
-        
+
         script:
         def strandedness = params.unstranded ? 'U' : 'SR'
         if (params.singleEnd) {
@@ -870,13 +898,13 @@ if(params.run_tx_exp_quant){
 if(params.run_splicing_exp_quant){
     process leafcutter_bam_to_junc {
         tag "${leafcutter_bam.baseName}"
-        
+
         input:
         file leafcutter_bam
 
         output:
         file '*.junc' into leafcutter_junc
-        
+
         script:
         """
         samtools view $leafcutter_bam | python $baseDir/bin/leafcutter/filter_cs.py | $baseDir/bin/leafcutter/sam2bed.pl --use-RNA-strand - ${leafcutter_bam.baseName}.bed
@@ -899,7 +927,7 @@ if(params.run_splicing_exp_quant){
         output:
         file 'leafcutter_perind*.gz'
         file 'junction_files.tar.gz'
-        
+
         script:
         """
         tar -czf junction_files.tar.gz -T $junc_files
