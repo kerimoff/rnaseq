@@ -28,8 +28,6 @@ env:
   - NXF_VER='' # Plus: get the latest NF version and check that it works
 
 script:
-  # Lint the pipeline code
-  - "nf-core lint ${TRAVIS_BUILD_DIR}"
   # Run, build reference genome with STAR
   - nextflow run ${TRAVIS_BUILD_DIR} -profile test,docker
   # Run, build reference genome with HISAT2
