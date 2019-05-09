@@ -1259,7 +1259,7 @@ process htseqcount {
     // Try to get real sample name
     sample_name = bam_htseqcount.baseName - 'Aligned.sortedByCoord.out'
     """
-    htseq-count -order pos \
+    htseq-count --order pos \
       --stranded ${strandedness} \
       --idattr gene_id \
       --additional-attr gene_name \
@@ -1268,9 +1268,9 @@ process htseqcount {
       --format bam \
       ${bam_htseqcount} \
       ${gtf} \
-      ${bam_htseqcount.baseName}_gene.htseq-count.txt
-    # ENSEMBL uses "gene_biotype" while vs GENCODE uses "gene_type"
-    htseq-count -order pos \
+      > ${bam_htseqcount.baseName}_gene.htseq-count.txt
+    # NOTE: ENSEMBL uses "gene_biotype" while vs GENCODE uses "gene_type"
+    htseq-count --order pos \
       --stranded ${strandedness} \
       --idattr gene_biotype \
       --mode union \
@@ -1278,7 +1278,7 @@ process htseqcount {
       --format bam \
       ${bam_htseqcount} \
       ${gtf} \
-      ${bam_htseqcount.baseName}_biotype.htseq-count.txt
+      > ${bam_htseqcount.baseName}_biotype.htseq-count.txt
     """
     // """
     // htseqcount -a $gtf -g gene_id -o ${bam_htseqcount.baseName}_gene.htseqcount.txt $extraAttributes -p -s $htseqcount_direction $bam_htseqcount
@@ -1299,14 +1299,21 @@ process merge_htseqcount {
     file input_files from htseqcount_to_merge.collect()
 
     output:
-    file 'merged_gene_counts.txt'
+    file 'merged_gene_counts.csv'
 
     script:
     //if we only have 1 file, just use cat and pipe output to csvtk. Else join all files first, and then remove unwanted column names.
     def single = input_files instanceof Path ? 1 : input_files.size()
-    def merge = (single == 1) ? 'cat' : 'csvtk join -t -f "Geneid,Start,Length,End,Chr,Strand,gene_name"'
+    def merge = (single == 1) ? 'cat' : 'csvtk join -t --no-header-row --fields 1,2'
     """
-    $merge $input_files | csvtk cut -t -f "-Start,-Chr,-End,-Length,-Strand" | sed 's/Aligned.sortedByCoord.out.markDups.bam//g' > merged_gene_counts.txt
+    echo gene $input_files | sed 's/.sorted_gene.htseq-count.txt//g' | sed 's/ /,/g' > header.csv
+    # translate tabs to commas
+    # Replace two-column gene names with "gene_name (gene_id)", e.g. "MALAT1 (ENSG00000251562)"
+    $merge $input_files | \
+      tr '\t' , \
+      awk -F "\"*,\"*" '{FS=","; OFS=","} { if (length(\$2) == 0) {\$1=\$1} else {\$1=\$1 " ("\$2")"}; \$2="" ; print \$0 }' \
+      cut -d, -f '1,3-' |\
+      cat header.csv -  > merged_gene_counts.csv
     """
 }
 
@@ -1408,7 +1415,7 @@ process get_software_versions {
     preseq &> v_preseq.txt
     read_duplication.py --version &> v_rseqc.txt
     echo \$(bamCoverage --version 2>&1) > v_deeptools.txt
-    htseqcount -v &> v_htseqcount.txt
+    htseq-count --help &> v_htseq-count.txt
     picard MarkDuplicates --version &> v_markduplicates.txt  || true
     samtools --version &> v_samtools.txt
     multiqc --version &> v_multiqc.txt
@@ -1462,7 +1469,7 @@ process multiqc {
     file ('preseq/*') from preseq_results.collect().ifEmpty([])
     file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     file ('htseqcount/*') from htseqcount_logs.collect()
-    file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
+    // file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
     file ('stringtie/stringtie_log*') from stringtie_log.collect()
     file ('sample_correlation_results/*') from sample_correlation_results.collect().ifEmpty([]) // If the Edge-R is not run create an Empty array
     file ('software_versions/*') from software_versions_yaml.collect()
