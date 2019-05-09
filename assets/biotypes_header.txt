@@ -1,11 +1,11 @@
 # id: 'biotype-counts'
 # section_name: 'Biotype Counts'
 # description: "shows reads overlapping genomic features of different biotypes,
-#     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."
+#     counted by <a href='https://htseq.readthedocs.io/en/release_0.11.1/count.html'>htseq-count</a>."
 # plot_type: 'bargraph'
-# anchor: 'featurecounts_biotype'
+# anchor: 'htseqcount_biotype'
 # pconfig:
-#     id: "featureCounts_biotype_plot"
-#     title: "featureCounts: Biotypes"
+#     id: "htseqcount_biotype_plot"
+#     title: "htseqcount: Biotypes"
 #     xlab: "# Reads"
 #     cpswitch_counts_label: "Number of Reads"
