@@ -1311,7 +1311,7 @@ process merge_htseqcount {
     # Replace two-column gene names with "gene_name (gene_id)", e.g. "MALAT1 (ENSG00000251562)"
     $merge $input_files | \
       tr '\t' , |\
-      awk -F "\"*,\"*" '{FS=","; OFS=","} { if (length(\$2) == 0) {\$1=\$1} else {\$1=\$1 " ("\$2")"}; \$2="" ; print \$0 }' |\
+      awk '{FS=","; OFS=","} { if (length(\$2) == 0) {\$1=\$1} else {\$1=\$2 " ("\$1")"}; \$2="" ; print \$0 }' |\
       cut -d, -f '1,3-' |\
       cat header.csv -  > merged_gene_counts.csv
     """
@@ -1362,37 +1362,37 @@ process stringtieFPKM {
     """
 }
 
-/*
- * STEP 11 - edgeR MDS and heatmap
- */
-process sample_correlation {
-    tag "${input_files[0].toString() - '.sorted_gene.htseqcount.txt' - 'Aligned'}"
-    publishDir "${params.outdir}/sample_correlation", mode: 'copy'
-
-    when:
-    !params.skip_qc && !params.skip_edger
-
-    input:
-    file input_files from geneCounts.collect()
-    val num_bams from bam_count.count()
-    file mdsplot_header from ch_mdsplot_header
-    file heatmap_header from ch_heatmap_header
-
-    output:
-    file "*.{txt,pdf,csv}" into sample_correlation_results
-
-    when:
-    num_bams > 2 && (!params.sampleLevel)
-
-    script: // This script is bundled with the pipeline, in nfcore/rnaseq/bin/
-    """
-    edgeR_heatmap_MDS.r $input_files
-    cat $mdsplot_header edgeR_MDS_Aplot_coordinates_mqc.csv >> tmp_file
-    mv tmp_file edgeR_MDS_Aplot_coordinates_mqc.csv
-    cat $heatmap_header log2CPM_sample_distances_mqc.csv >> tmp_file
-    mv tmp_file log2CPM_sample_distances_mqc.csv
-    """
-}
+// /*
+//  * STEP 11 - edgeR MDS and heatmap
+//  */
+// process sample_correlation {
+//     tag "${input_files[0].toString() - '.sorted_gene.htseqcount.txt' - 'Aligned'}"
+//     publishDir "${params.outdir}/sample_correlation", mode: 'copy'
+//
+//     when:
+//     !params.skip_qc && !params.skip_edger
+//
+//     input:
+//     file input_files from geneCounts.collect()
+//     val num_bams from bam_count.count()
+//     file mdsplot_header from ch_mdsplot_header
+//     file heatmap_header from ch_heatmap_header
+//
+//     output:
+//     file "*.{txt,pdf,csv}" into sample_correlation_results
+//
+//     when:
+//     num_bams > 2 && (!params.sampleLevel)
+//
+//     script: // This script is bundled with the pipeline, in nfcore/rnaseq/bin/
+//     """
+//     edgeR_heatmap_MDS.r $input_files
+//     cat $mdsplot_header edgeR_MDS_Aplot_coordinates_mqc.csv >> tmp_file
+//     mv tmp_file edgeR_MDS_Aplot_coordinates_mqc.csv
+//     cat $heatmap_header log2CPM_sample_distances_mqc.csv >> tmp_file
+//     mv tmp_file log2CPM_sample_distances_mqc.csv
+//     """
+// }
 
 /*
  * Parse software version numbers
