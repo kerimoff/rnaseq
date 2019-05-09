@@ -1,5 +1,12 @@
 # czbiohub/rnaseq
 
+## [Version 2.0](https://github.com/czbiohub/rnaseq/releases/tag/2.0) - TBA
+
+#### Pipeline updates
+
+- Replaced TrimGalore! with fastp
+- Replaced featureCounts with htseq-count
+
 ## [Version 1.2](https://github.com/czbiohub/rnaseq/releases/tag/1.2) - 2018-12-12
 
 #### Pipeline updates
