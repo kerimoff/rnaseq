@@ -1310,8 +1310,8 @@ process merge_htseqcount {
     # translate tabs to commas
     # Replace two-column gene names with "gene_name (gene_id)", e.g. "MALAT1 (ENSG00000251562)"
     $merge $input_files | \
-      tr '\t' , \
-      awk -F "\"*,\"*" '{FS=","; OFS=","} { if (length(\$2) == 0) {\$1=\$1} else {\$1=\$1 " ("\$2")"}; \$2="" ; print \$0 }' \
+      tr '\t' , |\
+      awk -F "\"*,\"*" '{FS=","; OFS=","} { if (length(\$2) == 0) {\$1=\$1} else {\$1=\$1 " ("\$2")"}; \$2="" ; print \$0 }' |\
       cut -d, -f '1,3-' |\
       cat header.csv -  > merged_gene_counts.csv
     """
