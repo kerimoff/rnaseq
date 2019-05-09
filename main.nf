@@ -68,7 +68,7 @@ def helpMessage() {
 
     Presets:
       --pico                        Sets trimming and standedness settings for the SMARTer Stranded Total RNA-Seq Kit - Pico Input kit. Equivalent to: --forward_stranded --five_prime_clip_r1 3 --three_prime_clip_r2 3
-      --fcExtraAttributes           Define which extra parameters should also be included in featureCounts (default: gene_names)
+      --fcExtraAttributes           Define which extra parameters should also be included in htseqcount (default: gene_names)
 
     Other options:
       --outdir                      The output directory where the results will be saved
@@ -179,7 +179,7 @@ if( params.gtf ){
         .fromPath(params.gtf)
         .ifEmpty { exit 1, "GTF annotation file not found: ${params.gtf}" }
         .into { gtf_makeSTARindex; gtf_makeHisatSplicesites; gtf_makeHISATindex; gtf_makeBED12;
-              gtf_star; gtf_dupradar; gtf_featureCounts; gtf_stringtieFPKM; gtf_dexseq }
+              gtf_star; gtf_dupradar; gtf_htseqcount; gtf_stringtieFPKM; gtf_dexseq }
 } else if( params.gff ){
   gffFile = Channel.fromPath(params.gff)
                    .ifEmpty { exit 1, "GFF annotation file not found: ${params.gff}" }
@@ -497,7 +497,7 @@ if(params.gff){
 
       output:
       file "${gff.baseName}.gtf" into gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12,
-            gtf_star, gtf_dupradar, gtf_featureCounts, gtf_stringtieFPKM, gtf_dexseq
+            gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq
 
       script:
       """
@@ -741,7 +741,7 @@ if(params.aligner == 'star'){
     star_aligned
         .filter { logs, bams -> check_log(logs) }
         .flatMap {  logs, bams -> bams }
-    .into { bam_count; bam_rseqc; bam_preseq; bam_markduplicates; bam_featurecounts; bam_stringtieFPKM; bam_for_genebody; bam_dexseq }
+    .into { bam_count; bam_rseqc; bam_preseq; bam_markduplicates; bam_htseqcount; bam_stringtieFPKM; bam_for_genebody; bam_dexseq }
 }
 
 
@@ -825,7 +825,7 @@ if(params.aligner == 'hisat2'){
         file wherearemyfiles from ch_where_hisat2_sort.collect()
 
         output:
-        file "${hisat2_bam.baseName}.sorted.bam" into bam_count, bam_rseqc, bam_preseq, bam_markduplicates, bam_featurecounts, bam_stringtieFPKM, bam_for_genebody, bam_dexseq
+        file "${hisat2_bam.baseName}.sorted.bam" into bam_count, bam_rseqc, bam_preseq, bam_markduplicates, bam_htseqcount, bam_stringtieFPKM, bam_for_genebody, bam_dexseq
         file "${hisat2_bam.baseName}.sorted.bam.bai" into bam_index_rseqc, bam_index_genebody
         file "where_are_my_files.txt"
 
@@ -901,11 +901,11 @@ if(params.run_tx_exp_quant){
         def outtransTPM = input_trans.baseName + "_TPM_merged.txt"
         def outtransNumReads = input_trans.baseName + "_NumReads_merged.txt"
         """
-        python3 $workflow.projectDir/bin/merge_featurecounts.py         \\
+        python3 $workflow.projectDir/bin/merge_htseqcount.py         \\
         --rm-suffix .quant.sf                                           \\
         -c 4 --skip-comments --header                                   \\
         -o $outtransNumReads -I $input_trans
-        python3 $workflow.projectDir/bin/merge_featurecounts.py         \\
+        python3 $workflow.projectDir/bin/merge_htseqcount.py         \\
         --rm-suffix .quant.sf                                           \\
         -c 3 --skip-comments --header                                   \\
         -o $outtransTPM -I $input_trans
@@ -1006,7 +1006,7 @@ if(params.run_tx_exp_quant){
 
         script:
         """
-        python3 $workflow.projectDir/bin/merge_featurecounts.py --rm-suffix .exoncount.txt -c 1 -o dexseq.exon.counts.merged.tsv -I $metafile
+        python3 $workflow.projectDir/bin/merge_htseqcount.py --rm-suffix .exoncount.txt -c 1 -o dexseq.exon.counts.merged.tsv -I $metafile
         """
     }
 }
@@ -1228,53 +1228,75 @@ process dupradar {
 /*
  * STEP 8 Feature counts
  */
-process featureCounts {
-    tag "${bam_featurecounts.baseName - '.sorted'}"
-    publishDir "${params.outdir}/featureCounts", mode: 'copy',
+process htseqcount {
+    tag "${bam_htseqcount.baseName - '.sorted'}"
+    publishDir "${params.outdir}/htseq-count", mode: 'copy',
         saveAs: {filename ->
             if (filename.indexOf("biotype_counts") > 0) "biotype_counts/$filename"
-            else if (filename.indexOf("_gene.featureCounts.txt.summary") > 0) "gene_count_summaries/$filename"
-            else if (filename.indexOf("_gene.featureCounts.txt") > 0) "gene_counts/$filename"
+            else if (filename.indexOf("_gene.htseq-count.txt.summary") > 0) "gene_count_summaries/$filename"
+            else if (filename.indexOf("_gene.htseq-count.txt") > 0) "gene_counts/$filename"
             else "$filename"
         }
 
     input:
-    file bam_featurecounts
-    file gtf from gtf_featureCounts.collect()
+    file bam_htseqcount
+    file gtf from gtf_htseqcount.collect()
     file biotypes_header from ch_biotypes_header.collect()
 
     output:
-    file "${bam_featurecounts.baseName}_gene.featureCounts.txt" into geneCounts, featureCounts_to_merge
-    file "${bam_featurecounts.baseName}_gene.featureCounts.txt.summary" into featureCounts_logs
-    file "${bam_featurecounts.baseName}_biotype_counts*mqc.{txt,tsv}" into featureCounts_biotype
+    file "${bam_htseqcount.baseName}_gene.htseq-count.txt" into geneCounts, htseqcount_to_merge
+    file "${bam_htseqcount.baseName}_biotype.htseq-count.txt" into htseqcount_logs
+    // file "${bam_htseqcount.baseName}_biotype_counts*mqc.{txt,tsv}" into htseqcount_biotype
 
     script:
-    def featureCounts_direction = 0
+    def strandedness = "no"
     def extraAttributes = params.fcExtraAttributes ? "--extraAttributes ${params.fcExtraAttributes}" : ''
     if (forward_stranded && !unstranded) {
-        featureCounts_direction = 1
+        htseqcount_direction = "yes"
     } else if (reverse_stranded && !unstranded){
-        featureCounts_direction = 2
+        htseqcount_direction = "reverse"
     }
     // Try to get real sample name
-    sample_name = bam_featurecounts.baseName - 'Aligned.sortedByCoord.out'
+    sample_name = bam_htseqcount.baseName - 'Aligned.sortedByCoord.out'
     """
-    featureCounts -a $gtf -g gene_id -o ${bam_featurecounts.baseName}_gene.featureCounts.txt $extraAttributes -p -s $featureCounts_direction $bam_featurecounts
-    featureCounts -a $gtf -g gene_biotype -o ${bam_featurecounts.baseName}_biotype.featureCounts.txt -p -s $featureCounts_direction $bam_featurecounts
-    cut -f 1,7 ${bam_featurecounts.baseName}_biotype.featureCounts.txt | tail -n +3 | cat $biotypes_header - >> ${bam_featurecounts.baseName}_biotype_counts_mqc.txt
-    mqc_features_stat.py ${bam_featurecounts.baseName}_biotype_counts_mqc.txt -s $sample_name -f rRNA -o ${bam_featurecounts.baseName}_biotype_counts_gs_mqc.tsv
+    htseq-count -order pos \
+      --stranded ${strandedness} \
+      --idattr gene_id \
+      --additional-attr gene_name \
+      --mode union \
+      --nonunique all \
+      --format bam \
+      ${bam_htseqcount} \
+      ${gtf} \
+      ${bam_htseqcount.baseName}_gene.htseq-count.txt
+    # ENSEMBL uses "gene_biotype" while vs GENCODE uses "gene_type"
+    htseq-count -order pos \
+      --stranded ${strandedness} \
+      --idattr gene_biotype \
+      --mode union \
+      --nonunique all \
+      --format bam \
+      ${bam_htseqcount} \
+      ${gtf} \
+      ${bam_htseqcount.baseName}_biotype.htseq-count.txt
     """
+    // """
+    // htseqcount -a $gtf -g gene_id -o ${bam_htseqcount.baseName}_gene.htseqcount.txt $extraAttributes -p -s $htseqcount_direction $bam_htseqcount
+    // htseqcount -a $gtf -g gene_biotype -o ${bam_htseqcount.baseName}_biotype.htseqcount.txt -p -s $htseqcount_direction $bam_htseqcount
+    // cut -f 1,7 ${bam_htseqcount.baseName}_biotype.htseqcount.txt | tail -n +3 | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
+    // mqc_features_stat.py ${bam_htseqcount.baseName}_biotype_counts_mqc.txt -s $sample_name -f rRNA -o ${bam_htseqcount.baseName}_biotype_counts_gs_mqc.tsv
+    // """
 }
 
 /*
- * STEP 9 - Merge featurecounts
+ * STEP 9 - Merge htseqcount
  */
-process merge_featureCounts {
+process merge_htseqcount {
     tag "${input_files[0].baseName - '.sorted'}"
-    publishDir "${params.outdir}/featureCounts", mode: 'copy'
+    publishDir "${params.outdir}/htseqcount", mode: 'copy'
 
     input:
-    file input_files from featureCounts_to_merge.collect()
+    file input_files from htseqcount_to_merge.collect()
 
     output:
     file 'merged_gene_counts.txt'
@@ -1337,7 +1359,7 @@ process stringtieFPKM {
  * STEP 11 - edgeR MDS and heatmap
  */
 process sample_correlation {
-    tag "${input_files[0].toString() - '.sorted_gene.featureCounts.txt' - 'Aligned'}"
+    tag "${input_files[0].toString() - '.sorted_gene.htseqcount.txt' - 'Aligned'}"
     publishDir "${params.outdir}/sample_correlation", mode: 'copy'
 
     when:
@@ -1386,7 +1408,7 @@ process get_software_versions {
     preseq &> v_preseq.txt
     read_duplication.py --version &> v_rseqc.txt
     echo \$(bamCoverage --version 2>&1) > v_deeptools.txt
-    featureCounts -v &> v_featurecounts.txt
+    htseqcount -v &> v_htseqcount.txt
     picard MarkDuplicates --version &> v_markduplicates.txt  || true
     samtools --version &> v_samtools.txt
     multiqc --version &> v_multiqc.txt
@@ -1439,8 +1461,8 @@ process multiqc {
     file ('rseqc/*') from genebody_coverage_results.collect().ifEmpty([])
     file ('preseq/*') from preseq_results.collect().ifEmpty([])
     file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
-    file ('featureCounts/*') from featureCounts_logs.collect()
-    file ('featureCounts_biotype/*') from featureCounts_biotype.collect()
+    file ('htseqcount/*') from htseqcount_logs.collect()
+    file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
     file ('stringtie/stringtie_log*') from stringtie_log.collect()
     file ('sample_correlation_results/*') from sample_correlation_results.collect().ifEmpty([]) // If the Edge-R is not run create an Empty array
     file ('software_versions/*') from software_versions_yaml.collect()
@@ -1455,7 +1477,7 @@ process multiqc {
     rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
     """
     multiqc . -f $rtitle $rfilename --config $multiqc_config \\
-        -m custom_content -m picard -m preseq -m rseqc -m featureCounts -m hisat2 -m star -m cutadapt -m fastqc
+        -m custom_content -m picard -m preseq -m rseqc -m htseqcount -m hisat2 -m star -m cutadapt -m fastqc
     """
 }
 
