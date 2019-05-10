@@ -1471,7 +1471,7 @@ process multiqc {
     file ('htseqcount/*') from htseqcount_logs.collect()
     // file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
     file ('stringtie/stringtie_log*') from stringtie_log.collect()
-    file ('sample_correlation_results/*') from sample_correlation_results.collect().ifEmpty([]) // If the Edge-R is not run create an Empty array
+    // file ('sample_correlation_results/*') from sample_correlation_results.collect().ifEmpty([]) // If the Edge-R is not run create an Empty array
     file ('software_versions/*') from software_versions_yaml.collect()
     file ('workflow_summary/*') from workflow_summary_yaml.collect()
 
