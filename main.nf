@@ -1293,7 +1293,7 @@ process htseqcount {
  */
 process merge_htseqcount {
     tag "${input_files[0].baseName - '.sorted'}"
-    publishDir "${params.outdir}/htseqcount", mode: 'copy'
+    publishDir "${params.outdir}/htseq-count", mode: 'copy'
 
     input:
     file input_files from htseqcount_to_merge.collect()
