@@ -1,4 +1,6 @@
 
+test: test_hisat
+
 test_hisat:
 	nextflow run -profile test,docker main.nf -ansi-log false -resume --aligner hisat2
 
