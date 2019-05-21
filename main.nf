@@ -1246,7 +1246,7 @@ process htseqcount {
     output:
     file "${bam_htseqcount.baseName}_gene.htseq-count.txt" into geneCounts, htseqcount_to_merge
     file "${bam_htseqcount.baseName}_biotype.htseq-count.txt" into htseqcount_logs
-    // file "${bam_htseqcount.baseName}_biotype_counts*mqc.{txt,tsv}" into htseqcount_biotype
+    file "${bam_htseqcount.baseName}_biotype_counts*mqc.{txt,tsv}" into htseqcount_biotype
 
     script:
     def strandedness = "no"
@@ -1279,6 +1279,9 @@ process htseqcount {
       ${bam_htseqcount} \
       ${gtf} \
       > ${bam_htseqcount.baseName}_biotype.htseq-count.txt
+
+    # Remove first 2 lines (tail -n +3) and last 5 lines (head -n +5)
+    tail -n +3 ${bam_htseqcount.baseName}_biotype.htseq-count.txt | head -n +5 | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
     """
     // """
     // htseqcount -a $gtf -g gene_id -o ${bam_htseqcount.baseName}_gene.htseqcount.txt $extraAttributes -p -s $htseqcount_direction $bam_htseqcount
@@ -1407,7 +1410,6 @@ process get_software_versions {
     echo $workflow.manifest.version &> v_ngi_rnaseq.txt
     echo $workflow.nextflow.version &> v_nextflow.txt
     fastqc --version &> v_fastqc.txt
-    cutadapt --version &> v_cutadapt.txt
     trim_galore --version &> v_trim_galore.txt
     STAR --version &> v_star.txt
     hisat2 --version &> v_hisat2.txt
@@ -1469,7 +1471,7 @@ process multiqc {
     file ('preseq/*') from preseq_results.collect().ifEmpty([])
     file ('dupradar/*') from dupradar_results.collect().ifEmpty([])
     file ('htseqcount/*') from htseqcount_logs.collect()
-    // file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
+    file ('htseqcount_biotype/*') from htseqcount_biotype.collect()
     file ('stringtie/stringtie_log*') from stringtie_log.collect()
     // file ('sample_correlation_results/*') from sample_correlation_results.collect().ifEmpty([]) // If the Edge-R is not run create an Empty array
     file ('software_versions/*') from software_versions_yaml.collect()
@@ -1484,7 +1486,7 @@ process multiqc {
     rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
     """
     multiqc . -f $rtitle $rfilename --config $multiqc_config \\
-        -m custom_content -m picard -m preseq -m rseqc -m htseqcount -m hisat2 -m star -m cutadapt -m fastqc
+        -m custom_content -m picard -m preseq -m rseqc -m htseq -m hisat2 -m star -m fastqc -m fastp
     """
 }
 
