@@ -1281,7 +1281,7 @@ process htseqcount {
       > ${bam_htseqcount.baseName}_biotype.htseq-count.txt
 
     # Remove first 2 lines (tail -n +3) and last 5 lines (head -n +5)
-    grep -v '^__' $F ${bam_htseqcount.baseName}_biotype.htseq-count.txt | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
+    grep -v '^__' ${bam_htseqcount.baseName}_biotype.htseq-count.txt | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
     """
     // """
     // htseqcount -a $gtf -g gene_id -o ${bam_htseqcount.baseName}_gene.htseqcount.txt $extraAttributes -p -s $htseqcount_direction $bam_htseqcount
