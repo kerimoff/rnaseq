@@ -23,7 +23,7 @@ and processes data using the following steps:
    - [Junction annotation](#junction-annotation)
 * [dupRadar](#dupradar) - technical / biological read duplication
 * [Preseq](#preseq) - library complexity
-* [featureCounts](#featurecounts) - gene counts, biotype counts, rRNA estimation.
+* [htseq-count](#htseq-count) - gene counts, biotype counts, rRNA estimation.
 * [StringTie](#stringtie) - FPKMs for genes and transcripts
 * [Sample_correlation](#Sample_correlation) - create MDS plot and sample pairwise distance heatmap / dendrogram
 * [MultiQC](#multiqc) - aggregate report, describing results of the whole pipeline
@@ -277,22 +277,22 @@ Note that these are predictive numbers only, not absolute. The MultiQC plot can 
 * `sample_ccurve.txt`
   * This file contains plot values for the complexity curve, plotted in the MultiQC report.
 
-## featureCounts
-[featureCounts](http://bioinf.wehi.edu.au/featureCounts/) from the subread package summarises the read distribution over genomic features such as genes, exons, promotors, gene bodies, genomic bins and chromosomal locations.
+## htseq-count
+[htseq-count](http://bioinf.wehi.edu.au/htseq-count/) from the subread package summarises the read distribution over genomic features such as genes, exons, promotors, gene bodies, genomic bins and chromosomal locations.
 RNA reads should mostly overlap genes, so be assigned.
 
-![featureCounts](images/featureCounts_assignment_plot.png)
+![htseq-count](images/featureCounts_htseq-count_assignment_plot.png)
 
-We also use featureCounts to count overlaps with different classes of features. This gives a good idea of where aligned reads are ending up and can show potential problems such as rRNA contamination.
+We also use htseq-count to count overlaps with different classes of features. This gives a good idea of where aligned reads are ending up and can show potential problems such as rRNA contamination.
 ![biotypes](images/featureCounts_biotype_plot.png)
 
-**Output directory: `results/featureCounts`**
+**Output directory: `results/htseq-count`**
 
 * `Sample.bam_biotype_counts.txt`
-  * Read counts for the different gene biotypes that featureCounts distinguishes.
-* `Sample.featureCounts.txt`
+  * Read counts for the different gene biotypes that htseq-count distinguishes.
+* `Sample.htseq-count.txt`
   * Read the counts for each gene provided in the reference `gtf` file
-* `Sample.featureCounts.txt.summary`
+* `Sample.htseq-count.txt.summary`
   * Summary file, containing statistics about the counts
 
 ## StringTie

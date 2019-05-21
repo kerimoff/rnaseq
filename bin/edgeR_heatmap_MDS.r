@@ -30,11 +30,11 @@ if (!require("gplots")) {
 # Load count column from all files into a list of data frames
 # Use data.tables fread as much much faster than read.table
 # Row names are GeneIDs
-temp <- lapply(lapply(args, fread, skip="Geneid", header=TRUE), function(x){return(as.data.frame(x)[,c(1, ncol(x))])})
+temp <- lapply(lapply(args, fread, header=TRUE), function(x){return(as.data.frame(x, header=NULL)[,c(1, ncol(x))])})
 
 # Merge into a single data frame
 merge.all <- function(x, y) {
-    merge(x, y, all=TRUE, by="Geneid")
+    merge(x, y, all=TRUE, by="1,2")
 }
 data <- data.frame(Reduce(merge.all, temp))
 

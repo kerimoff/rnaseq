@@ -13,7 +13,7 @@ regexes = {
     'HISAT2': ['v_hisat2.txt', r"version (\S+)"],
     'Picard MarkDuplicates': ['v_markduplicates.txt', r"([\d\.]+)-SNAPSHOT"],
     'Samtools': ['v_samtools.txt', r"samtools (\S+)"],
-    'featureCounts': ['v_featurecounts.txt', r"featureCounts v(\S+)"],
+    'htseq-count': ['v_htseq-count.txt', r"version (\S+)"],
     'deepTools': ['v_deeptools.txt', r"bamCoverage (\S+)"],
     'StringTie': ['v_stringtie.txt', r"(\S+)"],
     'Preseq': ['v_preseq.txt', r"Version: (\S+)"],

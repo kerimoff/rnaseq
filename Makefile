@@ -1,4 +1,7 @@
 
+test_hisat:
+	nextflow run -profile test,docker main.nf -ansi-log false -resume --aligner hisat2
+
 docker: docker_build docker_push
 
 docker_build:
