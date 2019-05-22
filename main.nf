@@ -377,9 +377,9 @@ process combine_fasta_gzs {
   file(gtfs) from genome_gtfs
 
   output:
-  file("${genome_name}.fa") into ch_fasta_for_star_index, ch_fasta_for_hisat_index
-  file("${genome_name}.gtf") into gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12,
-        gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq
+  file("${genome_name}.fa") into (ch_fasta_for_star_index, ch_fasta_for_hisat_index)
+  file("${genome_name}.gtf") into (gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12,
+        gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq)
 
   script:
   genome_name = params.genome.replaceAll(",", "__")
