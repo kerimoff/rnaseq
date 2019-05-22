@@ -127,7 +127,7 @@ if( params.genomes && params.genome ){
   params.gtf = genome_names_valid.collect{ params.genomes[ it ].gtf ?: false }
   params.gff = genome_names_valid.collect{ params.genomes[ it ].gff ?: false }
   params.bed12 = genome_names_valid.collect{ params.genomes[ it ].bed12 ?: false }
-  params.hiat2_index = genome_names_valid.collect{ params.genomes[ it ].hisat2_index ?: false }
+  params.hisat2_index = genome_names_valid.collect{ params.genomes[ it ].hisat2_index ?: false }
 }
 
 //
@@ -145,7 +145,7 @@ ch_biotypes_header = Channel.fromPath("$baseDir/assets/biotypes_header.txt")
 ch_multiqc_config = Channel.fromPath(params.multiqc_config)
 ch_output_docs = Channel.fromPath("$baseDir/docs/output.md")
 Channel.fromPath("$baseDir/assets/where_are_my_files.txt")
-       .into{ch_where_trim_galore; ch_where_star; ch_where_hisat2; ch_where_hisat2_sort}
+       .into{ch_where_fastp; ch_where_star; ch_where_hisat2; ch_where_hisat2_sort}
 
 // Define regular variables so that they can be overwritten
 five_prime_clip_r1 = params.five_prime_clip_r1
@@ -643,7 +643,7 @@ process fastp {
 
     input:
     set val(name), file(reads) from raw_reads_fastp
-    file wherearemyfiles from ch_where_trim_galore.collect()
+    file wherearemyfiles from ch_where_fastp.collect()
 
     output:
     set val(name), file("*fq.gz") into trimmed_reads, trimmed_reads_salmon, trimmed_reads_fastqc
