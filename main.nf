@@ -52,8 +52,8 @@ def helpMessage() {
     References                      If not specified in the configuration file or you wish to overwrite any of the references.
       --star_index                  Path to STAR index
       --hisat2_index                Path to HiSAT2 index
-      --fasta                       Path to Fasta reference
-      --gtf                         Path to GTF file
+      --fasta                       Path to *gzipped* Fasta reference
+      --gtf                         Path to *gzipped* GTF file
       --gff                         Path to GFF3 file
       --bed12                       Path to bed12 file
       --saveReference               Save the generated reference files the the Results directory.
@@ -114,6 +114,8 @@ if (params.genomes && params.genome && !params.genomes.containsKey(params.genome
 
 // Reference index path configuration
 // Define these here - after the profiles are loaded with the iGenomes paths
+genomes = params.genome?.toString()?.tokenize(",")
+
 params.star_index = params.genome ? params.genomes[ params.genome ].star ?: false : false
 params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
 params.gtf = params.genome ? params.genomes[ params.genome ].gtf ?: false : false
@@ -341,6 +343,32 @@ if( workflow.profile == 'standard'){
                   "  Please use `-profile uppmax` to run on UPPMAX clusters.\n" +
                   "============================================================"
     }
+}
+
+/*
+ * PREPROCESSING - Combine and unzip fasta and gtf files
+ */
+
+process combine_fasta_gzs {
+  tag "$fastas"
+  publishDir path: { params.saveReference ? "${params.outdir}/reference_genome" : params.outdir },
+             saveAs: { params.saveReference ? it : null }, mode: 'copy'
+
+  input:
+  file(fastas) from genome_fastas
+  file(gtfs) from genome_gtfs
+
+  output:
+  file("${genome_name}.fa") into ch_fasta_for_star_index, ch_fasta_for_hisat_index
+  file("${genome_name}.gtf") into gtf_makeSTARindex; gtf_makeHisatSplicesites; gtf_makeHISATindex; gtf_makeBED12;
+        gtf_star; gtf_dupradar; gtf_featureCounts; gtf_stringtieFPKM; gtf_dexseq
+
+  script:
+  genome_name = params.genome.replaceAll(",", "_")
+  """
+  cat $fastas | gzip -c - > ${genome_name}.fa
+  cat $gtfs | gzip -c - > ${genome_name}.gtf
+  """
 }
 
 /*
