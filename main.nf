@@ -120,21 +120,23 @@ if( params.genomes && params.genome ){
         " genomes are: ${params.genomes.keySet().sort().join(", ")}"
   }
 
-  star_indexes = genome_names.each{ params.genomes[ it ].star ?: false }
-  fastas = genome_names.each{ params.genomes[ it ].fasta ?: false }
-  println(star_indexes)
-  println(fastas)
+  // Reference index path configuration
+  // Define these here - after the profiles are loaded with the iGenomes paths
+  params.star_index = genome_names_valid.collect{ params.genomes[ it ].star ?: false }
+  params.fasta = genome_names_valid.collect{ params.genomes[ it ].fasta ?: false }
+  params.gtf = genome_names_valid.collect{ params.genomes[ it ].gtf ?: false }
+  params.gff = genome_names_valid.collect{ params.genomes[ it ].gff ?: false }
+  params.bed12 = genome_names_valid.collect{ params.genomes[ it ].bed12 ?: false }
+  params.hiat2_index = genome_names_valid.collect{ params.genomes[ it ].hisat2_index ?: false }
 }
 
-
-// Reference index path configuration
-// Define these here - after the profiles are loaded with the iGenomes paths
-params.star_index = params.genome ? params.genomes[ params.genome ].star ?: false : false
-params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
-params.gtf = params.genome ? params.genomes[ params.genome ].gtf ?: false : false
-params.gff = params.genome ? params.genomes[ params.genome ].gff ?: false : false
-params.bed12 = params.genome ? params.genomes[ params.genome ].bed12 ?: false : false
-params.hisat2_index = params.genome ? params.genomes[ params.genome ].hisat2 ?: false : false
+//
+// params.star_index = params.genome ? params.genomes[ params.genome ].star ?: false : false
+// params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
+// params.gtf = params.genome ? params.genomes[ params.genome ].gtf ?: false : false
+// params.gff = params.genome ? params.genomes[ params.genome ].gff ?: false : false
+// params.bed12 = params.genome ? params.genomes[ params.genome ].bed12 ?: false : false
+// params.hisat2_index = params.genome ? params.genomes[ params.genome ].hisat2 ?: false : false
 
 
 ch_mdsplot_header = Channel.fromPath("$baseDir/assets/mdsplot_header.txt")
@@ -165,44 +167,51 @@ if (params.pico){
     unstranded = false
 }
 
+println("params.gtf")
+println(params.gtf)
+println("params.gtf")
+println(params.gtf)
+println("GTF channel:")
+Channel
+    .fromPath(params.gtf)
+    .println()
 
 // Validate inputs
 if (params.aligner != 'star' && params.aligner != 'hisat2'){
     exit 1, "Invalid aligner option: ${params.aligner}. Valid options: 'star', 'hisat2'"
 }
-if( params.star_index && params.aligner == 'star' ){
+if( params.star_index && params.star_index.every() && params.aligner == 'star' ){
     star_index = Channel
         .fromPath(params.star_index)
         .ifEmpty { exit 1, "STAR index not found: ${params.star_index}" }
 }
-else if ( params.hisat2_index && params.aligner == 'hisat2' ){
+else if ( params.hisat2_index && params.hisat2_index.every() && params.aligner == 'hisat2' ){
     hs2_indices = Channel
         .fromPath("${params.hisat2_index}*")
         .ifEmpty { exit 1, "HISAT2 index not found: ${params.hisat2_index}" }
 }
-else if ( params.fasta ){
+else if ( params.fasta && params.fasta.every() ){
     Channel.fromPath(params.fasta)
            .ifEmpty { exit 1, "Fasta file not found: ${params.fasta}" }
-           .into { ch_fasta_for_star_index; ch_fasta_for_hisat_index}
+           .set { genome_fastas }
 }
 else {
     exit 1, "No reference genome specified!"
 }
 
-if( params.gtf ){
+if( params.gtf && params.gtf.every() ){
     Channel
         .fromPath(params.gtf)
         .ifEmpty { exit 1, "GTF annotation file not found: ${params.gtf}" }
-        .into { gtf_makeSTARindex; gtf_makeHisatSplicesites; gtf_makeHISATindex; gtf_makeBED12;
-              gtf_star; gtf_dupradar; gtf_htseqcount; gtf_stringtieFPKM; gtf_dexseq }
-} else if( params.gff ){
+        .set { genome_gtfs }
+} else if( params.gff && params.gff.any{true} ){
   gffFile = Channel.fromPath(params.gff)
                    .ifEmpty { exit 1, "GFF annotation file not found: ${params.gff}" }
 } else {
     exit 1, "No GTF or GFF3 annotation specified!"
 }
 
-if( params.bed12 ){
+if( params.bed12 && params.bed12.every() ){
     bed12 = Channel
         .fromPath(params.bed12)
         .ifEmpty { exit 1, "BED12 annotation file not found: ${params.bed12}" }
@@ -268,19 +277,19 @@ if(readPaths){
             .from(readPaths)
             .map { row -> [ row[0], [file(row[1][0])]] }
             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-            .into { raw_reads_fastqc; raw_reads_trimgalore }
+            .into { raw_reads_fastqc; raw_reads_fastp }
     } else {
         Channel
             .from(readPaths)
             .map { row -> [ row[0], [file(row[1][0]), file(row[1][1])]] }
             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-            .into { raw_reads_fastqc; raw_reads_trimgalore }
+            .into { raw_reads_fastqc; raw_reads_fastp }
     }
 } else {
     Channel
         .fromFilePairs( params.reads, size: params.singleEnd ? 1 : 2 )
         .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nNB: Path requires at least one * wildcard!\nIf this is single-end data, please specify --singleEnd on the command line." }
-        .into { raw_reads_fastqc; raw_reads_trimgalore }
+        .into { raw_reads_fastqc; raw_reads_fastp }
 }
 
 
@@ -306,17 +315,17 @@ summary["Trim 3' R1"] = three_prime_clip_r1
 summary["Trim 3' R2"] = three_prime_clip_r2
 if(params.aligner == 'star'){
     summary['Aligner'] = "STAR"
-    if(params.star_index)          summary['STAR Index']   = params.star_index
-    else if(params.fasta)          summary['Fasta Ref']    = params.fasta
+    if(params.star_index && params.star_index.every())          summary['STAR Index']   = params.star_index
+    else if(params.fasta && params.fasta.every())          summary['Fasta Ref']    = params.fasta
 } else if(params.aligner == 'hisat2') {
     summary['Aligner'] = "HISAT2"
-    if(params.hisat2_index)        summary['HISAT2 Index'] = params.hisat2_index
-    else if(params.fasta)          summary['Fasta Ref']    = params.fasta
+    if(params.hisat2_index && params.hisat2_index.every())        summary['HISAT2 Index'] = params.hisat2_index
+    else if(params.fasta && params.fasta.every())          summary['Fasta Ref']    = params.fasta
     if(params.splicesites)         summary['Splice Sites'] = params.splicesites
 }
-if(params.gtf)                 summary['GTF Annotation']  = params.gtf
-if(params.gff)                 summary['GFF3 Annotation']  = params.gff
-if(params.bed12)               summary['BED Annotation']  = params.bed12
+if(params.gtf && params.gtf.every())                 summary['GTF Annotation']  = params.gtf
+if(params.gff && params.gff.every())                 summary['GFF3 Annotation']  = params.gff
+if(params.bed12 && params.bed12.every())               summary['BED Annotation']  = params.bed12
 summary['Save Reference'] = params.saveReference ? 'Yes' : 'No'
 summary['Save Trimmed']   = params.saveTrimmed ? 'Yes' : 'No'
 summary['Save Intermeds'] = params.saveAlignedIntermediates ? 'Yes' : 'No'
@@ -373,11 +382,11 @@ process combine_fasta_gzs {
 
   output:
   file("${genome_name}.fa") into ch_fasta_for_star_index, ch_fasta_for_hisat_index
-  file("${genome_name}.gtf") into gtf_makeSTARindex; gtf_makeHisatSplicesites; gtf_makeHISATindex; gtf_makeBED12;
-        gtf_star; gtf_dupradar; gtf_featureCounts; gtf_stringtieFPKM; gtf_dexseq
+  file("${genome_name}.gtf") into gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12,
+        gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq
 
   script:
-  genome_name = params.genome.replaceAll(",", "_")
+  genome_name = params.genome.replaceAll(",", "__")
   """
   cat $fastas | gzip -c - > ${genome_name}.fa
   cat $gtfs | gzip -c - > ${genome_name}.gtf
@@ -633,7 +642,7 @@ process fastp {
         }
 
     input:
-    set val(name), file(reads) from raw_reads_trimgalore
+    set val(name), file(reads) from raw_reads_fastp
     file wherearemyfiles from ch_where_trim_galore.collect()
 
     output:
