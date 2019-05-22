@@ -107,15 +107,29 @@ if (params.help){
     exit 0
 }
 
-// Check if genome exists in the config file
-if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
-    exit 1, "The provided genome '${params.genome}' is not available in the iGenomes file. Currently the available genomes are ${params.genomes.keySet().join(", ")}"
-  }
+if (params.genomes && params.genome){
+  Channel.from(params.genome?.toString()?.tokenize(","))
+    .into{ genome_names }
+  // println(genomes)
+
+  println(params.genomes.keySet().sort().join(", "))
+
+  genome_names_valid = Channel.create()
+  genome_names_invalid = Channel.create()
+
+  genome_names
+    .choice( genome_names_valid, genome_names_invalid)
+    { g -> params.genomes.containsKey(g) ? 0 : 1 }
+
+  genome_names_invalid.subscribe{
+    exit 1, "The provided genome '${it}' is not available through CZ Biohub,"+
+      "iGenomes or transgenes references. Currently the available genomes are "+
+      "${params.genomes.keySet().sort().join(", ")}" }
+}
+
 
 // Reference index path configuration
 // Define these here - after the profiles are loaded with the iGenomes paths
-genomes = params.genome?.toString()?.tokenize(",")
-
 params.star_index = params.genome ? params.genomes[ params.genome ].star ?: false : false
 params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
 params.gtf = params.genome ? params.genomes[ params.genome ].gtf ?: false : false
@@ -1307,8 +1321,18 @@ process htseqcount {
       ${bam_htseqcount} \
       ${gtf} \
       > ${bam_htseqcount.baseName}_biotype.htseq-count.txt
+    # Run a second time but this time append to the same file
+    htseq-count --order pos \
+      --stranded ${strandedness} \
+      --idattr gene_type \
+      --mode union \
+      --nonunique all \
+      --format bam \
+      ${bam_htseqcount} \
+      ${gtf} \
+      >> ${bam_htseqcount.baseName}_biotype.htseq-count.txt
 
-    # Remove first 2 lines (tail -n +3) and last 5 lines (head -n +5)
+    # Remove lines specifying no alignment
     grep -v '^__' ${bam_htseqcount.baseName}_biotype.htseq-count.txt | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
     """
     // """
