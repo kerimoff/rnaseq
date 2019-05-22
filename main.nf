@@ -167,15 +167,6 @@ if (params.pico){
     unstranded = false
 }
 
-println("params.gtf")
-println(params.gtf)
-println("params.gtf")
-println(params.gtf)
-println("GTF channel:")
-Channel
-    .fromPath(params.gtf)
-    .println()
-
 // Validate inputs
 if (params.aligner != 'star' && params.aligner != 'hisat2'){
     exit 1, "Invalid aligner option: ${params.aligner}. Valid options: 'star', 'hisat2'"
