@@ -1281,7 +1281,7 @@ process htseqcount {
       > ${bam_htseqcount.baseName}_biotype.htseq-count.txt
 
     # Remove first 2 lines (tail -n +3) and last 5 lines (head -n +5)
-    tail -n +3 ${bam_htseqcount.baseName}_biotype.htseq-count.txt | head -n +5 | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
+    grep -v '^__' ${bam_htseqcount.baseName}_biotype.htseq-count.txt | cat $biotypes_header - >> ${bam_htseqcount.baseName}_biotype_counts_mqc.txt
     """
     // """
     // htseqcount -a $gtf -g gene_id -o ${bam_htseqcount.baseName}_gene.htseqcount.txt $extraAttributes -p -s $htseqcount_direction $bam_htseqcount
@@ -1410,7 +1410,7 @@ process get_software_versions {
     echo $workflow.manifest.version &> v_ngi_rnaseq.txt
     echo $workflow.nextflow.version &> v_nextflow.txt
     fastqc --version &> v_fastqc.txt
-    trim_galore --version &> v_trim_galore.txt
+    fastp --version &> v_fastp.txt
     STAR --version &> v_star.txt
     hisat2 --version &> v_hisat2.txt
     stringtie --version &> v_stringtie.txt
