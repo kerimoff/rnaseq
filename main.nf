@@ -304,6 +304,11 @@ log.info """=======================================================
 ======================================================="""
 def summary = [:]
 summary['Run Name']     = custom_runName ?: workflow.runName
+summary['Process executor'] = process.executor
+if (process.executor == "awsbatch"){
+  summary['AWS Region'] = params.awsregion
+  summary["AWS Batch queue"] = params.awsqueue
+}
 summary['Reads']        = params.reads
 summary['Data Type']    = params.singleEnd ? 'Single-End' : 'Paired-End'
 summary['Genome']       = params.genome
