@@ -107,24 +107,23 @@ if (params.help){
     exit 0
 }
 
-if (params.genomes && params.genome){
-  Channel.from(params.genome?.toString()?.tokenize(","))
-    .into{ genome_names }
-  // println(genomes)
+if( params.genomes && params.genome ){
+  genome_names = params.genome?.toString()?.tokenize(",")
 
-  println(params.genomes.keySet().sort().join(", "))
+  genome_names_valid = genome_names.findAll{ g -> params.genomes.containsKey(g) }
+  genome_names_invalid = genome_names.findAll{ g -> !params.genomes.containsKey(g) }
 
-  genome_names_valid = Channel.create()
-  genome_names_invalid = Channel.create()
+  if (genome_names_invalid.size() > 0) {
+      exit 1, "The provided genome(s) "+
+        "'${genome_names_invalid.sort().join(", ")}' is not available through "+
+        "CZ Biohub, iGenomes or transgenes references. Currently the available"+
+        " genomes are: ${params.genomes.keySet().sort().join(", ")}"
+  }
 
-  genome_names
-    .choice( genome_names_valid, genome_names_invalid)
-    { g -> params.genomes.containsKey(g) ? 0 : 1 }
-
-  genome_names_invalid.subscribe{
-    exit 1, "The provided genome '${it}' is not available through CZ Biohub, "+
-      "iGenomes or transgenes references. Currently the available genomes are "+
-      "${params.genomes.keySet().sort().join(", ")}" }
+  star_indexes = genome_names.each{ params.genomes[ it ].star ?: false }
+  fastas = genome_names.each{ params.genomes[ it ].fasta ?: false }
+  println(star_indexes)
+  println(fastas)
 }
 
 
