@@ -9,6 +9,7 @@ test_biohub:
 		--reads "s3://olgabot-maca/mini-maca/*{R1,R2}*.fastq.gz" \
 		--genome GRCm38,ERCC \
 		-profile czbiohub_aws \
+		--outdir "s3://olgabot-maca/mini-maca/results" \ 
 		-resume
 
 
