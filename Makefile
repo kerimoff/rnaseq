@@ -7,7 +7,7 @@ test_hisat:
 test_biohub:
 	nextflow run main.nf \
 		--reads "s3://olgabot-maca/mini-maca/*{R1,R2}*.fastq.gz" \
-		--genome GRCm38 \
+		--genome GRCm38,ERCC \
 		-profile czbiohub_aws \
 		-resume
 
