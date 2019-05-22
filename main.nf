@@ -122,7 +122,7 @@ if (params.genomes && params.genome){
     { g -> params.genomes.containsKey(g) ? 0 : 1 }
 
   genome_names_invalid.subscribe{
-    exit 1, "The provided genome '${it}' is not available through CZ Biohub,"+
+    exit 1, "The provided genome '${it}' is not available through CZ Biohub, "+
       "iGenomes or transgenes references. Currently the available genomes are "+
       "${params.genomes.keySet().sort().join(", ")}" }
 }
