@@ -303,11 +303,11 @@ log.info """=======================================================
  czbiohub/rnaseq : RNA-Seq Best Practice v${workflow.manifest.version}
 ======================================================="""
 def summary = [:]
-summary['Run Name']     = custom_runName ?: workflow.runName
-summary['Process executor'] = process.executor
+summary['Run Name']          = custom_runName ?: workflow.runName
+summary['Process Executor']  = process.executor
 if (process.executor == "awsbatch"){
-  summary['AWS Region'] = params.awsregion
-  summary["AWS Batch queue"] = params.awsqueue
+  summary['AWS Region']      = params.awsregion
+  summary["AWS Batch Queue"] = params.awsqueue
 }
 summary['Reads']        = params.reads
 summary['Data Type']    = params.singleEnd ? 'Single-End' : 'Paired-End'
@@ -320,17 +320,17 @@ summary["Trim 3' R1"] = three_prime_clip_r1
 summary["Trim 3' R2"] = three_prime_clip_r2
 if(params.aligner == 'star'){
     summary['Aligner'] = "STAR"
-    if(params.star_index && params.star_index.every())          summary['STAR Index']   = params.star_index
+    if(params.star_index && params.star_index.every())     summary['STAR Index']   = params.star_index
     else if(params.fasta && params.fasta.every())          summary['Fasta Ref']    = params.fasta
 } else if(params.aligner == 'hisat2') {
     summary['Aligner'] = "HISAT2"
-    if(params.hisat2_index && params.hisat2_index.every())        summary['HISAT2 Index'] = params.hisat2_index
+    if(params.hisat2_index && params.hisat2_index.every()) summary['HISAT2 Index'] = params.hisat2_index
     else if(params.fasta && params.fasta.every())          summary['Fasta Ref']    = params.fasta
     if(params.splicesites)         summary['Splice Sites'] = params.splicesites
 }
-if(params.gtf && params.gtf.every())                 summary['GTF Annotation']  = params.gtf
-if(params.gff && params.gff.every())                 summary['GFF3 Annotation']  = params.gff
-if(params.bed12 && params.bed12.every())               summary['BED Annotation']  = params.bed12
+if(params.gtf && params.gtf.every())      summary['GTF Annotation']  = params.gtf
+if(params.gff && params.gff.every())      summary['GFF3 Annotation']  = params.gff
+if(params.bed12 && params.bed12.every())  summary['BED Annotation']  = params.bed12
 summary['Save Reference'] = params.saveReference ? 'Yes' : 'No'
 summary['Save Trimmed']   = params.saveTrimmed ? 'Yes' : 'No'
 summary['Save Intermeds'] = params.saveAlignedIntermediates ? 'Yes' : 'No'
@@ -355,7 +355,7 @@ if(params.email) {
     summary['E-mail Address'] = params.email
     summary['MultiQC maxsize'] = params.maxMultiqcEmailFileSize
 }
-log.info summary.collect { k,v -> "${k.padRight(15)}: $v" }.join("\n")
+log.info summary.collect { k,v -> "${k.padRight(20)}: $v" }.join("\n")
 log.info "========================================="
 
 
