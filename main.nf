@@ -111,14 +111,14 @@ if (params.help){
 if( params.genomes && params.genome ){
   genome_names = params.genome?.toString()?.tokenize(",")
 
-  genome_names_valid = genome_names.findAll{ g -> params.genomes.containsKey(g) }
-  genome_names_invalid = genome_names.findAll{ g -> !params.genomes.containsKey(g) }
+  genome_names_valid = genome_names.findAll{ g -> params.genomes.containsKey(g) }.sort()
+  genome_names_invalid = genome_names.findAll{ g -> !params.genomes.containsKey(g) }.sort()
 
   if (genome_names_invalid.size() > 0) {
       exit 1, "The provided genome(s) "+
         "'${genome_names_invalid.sort().join(", ")}' is not available through "+
         "CZ Biohub, iGenomes or transgenes references. Currently the available"+
-        " genomes are: ${params.genomes.keySet().sort().join(", ")}"
+        " genomes are: ${params.genomes.keySet().join(", ")}"
   }
 
   genome_name = genome_names_valid.join("__") ?: false
@@ -370,7 +370,7 @@ if( workflow.profile == 'standard'){
 
 process combine_genome_annotation_gzs {
   tag "${genome_name}"
-  container "genevera/docker-pigz"
+
   publishDir path: { params.saveReference ? "${params.outdir}/reference_genome" : params.outdir },
              saveAs: { params.saveReference ? it : null }, mode: 'copy'
 
@@ -627,7 +627,7 @@ process fastqc {
 /*
  * STEP 2 - Trim reads with fastp and run FASTQC on the output
  */
-process fastp {
+process trim_with_fastp {
     tag "$name"
     container 'quay.io/biocontainers/fastp:0.20.0--hdbcaa40_0'
     publishDir "${params.outdir}/fastp", mode: 'copy',
