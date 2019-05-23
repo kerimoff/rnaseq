@@ -298,7 +298,12 @@ log.info """
 ==================================================================================================="""
 def summary = [:]
 summary['Run Name']          = custom_runName ?: workflow.runName
+<<<<<<< HEAD
 if (params.awsregion){
+=======
+summary['Process Executor']  = process.executor
+if (process.executor == "awsbatch"){
+>>>>>>> increase padding for summary
   summary['AWS Region']      = params.awsregion
   summary["AWS Batch Queue"] = params.awsqueue
 }
