@@ -378,27 +378,14 @@ process combine_genome_annotation_gzs {
   file gtfs from genome_gtfs.collect()
 
   output:
-<<<<<<< HEAD
-  file "${genome_name}.fa" into ch_fasta_for_star_index, ch_fasta_for_hisat_index
-  // file("${genome_name}.fa") into (ch_fasta_for_star_index, ch_fasta_for_hisat_index)
-  file "${genome_name}.gtf" into gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12, gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq
-
-  script:
-  genome_name = params.genome.replaceAll(",", "__")
-=======
   file "${genome_name}.fa" into (ch_fasta_for_star_index, ch_fasta_for_hisat_index, genome_fasta_ch)
   file "${genome_name}.gtf" into (gtf_makeSTARindex, gtf_makeHisatSplicesites, gtf_makeHISATindex, gtf_makeBED12, gtf_star, gtf_dupradar, gtf_htseqcount, gtf_stringtieFPKM, gtf_dexseq)
 
   script:
->>>>>>> Fix various logic with multiple genome references
   """
   # 'cat' works for gzipped files, too!
   cat $fastas | pigz --processes ${task.cpus} --decompress --stdout - > ${genome_name}.fa
-<<<<<<< HEAD
-  cat $gtfs | pigz --processes ${task.cpus} --decompress --stdout > ${genome_name}.gtf
-=======
   cat $gtfs | pigz --processes ${task.cpus} --decompress --stdout - > ${genome_name}.gtf
->>>>>>> Fix various logic with multiple genome references
   """
 }
 
@@ -432,10 +419,6 @@ if(params.aligner == 'star' && !params.star_index.every() && genome_name){
         """
     }
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Fix various logic with multiple genome references
 /*
  * PREPROCESSING - Build HISAT2 splice sites file
  */
