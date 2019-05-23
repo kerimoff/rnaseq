@@ -298,8 +298,7 @@ log.info """
 ==================================================================================================="""
 def summary = [:]
 summary['Run Name']          = custom_runName ?: workflow.runName
-summary['Process Executor']  = process.executor
-if (process.executor == "awsbatch"){
+if (params.awsregion){
   summary['AWS Region']      = params.awsregion
   summary["AWS Batch Queue"] = params.awsqueue
 }
