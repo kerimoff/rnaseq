@@ -20,6 +20,22 @@ test_biohub:
 		--outdir "s3://olgabot-maca/mini-maca/results" \
 		-resume
 
+test_biohub_hisat:
+	nextflow run main.nf \
+		--reads "s3://olgabot-maca/mini-maca/*{R1,R2}*.fastq.gz" \
+		--genome GRCm38,ERCC \
+		-profile czbiohub_aws \
+		--saveReference \
+		--saveTrimmed \
+		--saveAlignedIntermediates \
+		--run_splicing_exp_quant \
+		--run_exon_quant \
+		-dump-channels \
+		--run_txrevise \
+		--run_tx_exp_quant \
+		--outdir "s3://olgabot-maca/mini-maca/results" \
+		-resume --aligner hisat2
+
 
 docker: docker_build docker_push
 
