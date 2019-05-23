@@ -53,6 +53,7 @@ def helpMessage() {
       --star_index                  Path to STAR index
       --hisat2_index                Path to HiSAT2 index
       --fasta                       Path to *gzipped* Fasta reference
+      --tx_fasta                    Path to a *gzipped* transcriptome reference
       --gtf                         Path to *gzipped* GTF file
       --gff                         Path to GFF3 file
       --bed12                       Path to bed12 file
@@ -221,7 +222,7 @@ if( workflow.profile == 'uppmax' || workflow.profile == 'uppmax-devel' ){
     if ( !params.project ) exit 1, "No UPPMAX project ID found! Use --project"
 }
 
-if(params.run_tx_exp_quant){
+if(params.run_tx_exp_quant && params.tx_fasta){
     Channel
         .fromPath(params.tx_fasta)
         .ifEmpty { exit 1, "Transcript fasta file is unreachable: ${params.tx_fasta}" }
@@ -419,6 +420,7 @@ if(params.aligner == 'star' && !params.star_index.every() && genome_name){
         """
     }
 }
+
 /*
  * PREPROCESSING - Build HISAT2 splice sites file
  */

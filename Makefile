@@ -15,8 +15,6 @@ test_biohub:
 		--run_splicing_exp_quant \
 		--run_exon_quant \
 		-dump-channels \
-		--run_txrevise \
-		--run_tx_exp_quant \
 		--outdir "s3://olgabot-maca/mini-maca/results" \
 		-resume
 
@@ -31,8 +29,6 @@ test_biohub_hisat:
 		--run_splicing_exp_quant \
 		--run_exon_quant \
 		-dump-channels \
-		--run_txrevise \
-		--run_tx_exp_quant \
 		--outdir "s3://olgabot-maca/mini-maca/results" \
 		-resume --aligner hisat2
 
