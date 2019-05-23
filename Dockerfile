@@ -6,3 +6,8 @@ LABEL authors="olga.botvinnik@czbiohub.org" \
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH /opt/conda/envs/czbiohub-rnaseq-1.2/bin:$PATH
+
+ENV PACKAGES pigz
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ${PACKAGES} && \
+    apt-get clean
