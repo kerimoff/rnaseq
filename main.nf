@@ -572,7 +572,7 @@ if (params.run_exon_quant){
         script:
         """
         cat $gtf | sed 's/chrM/chrMT/;s/chr//' > ${gtf.baseName}.patched_contigs.gtf
-        $workflow.workDir/bin/dexseq/dexseq_prepare_annotation.py ${gtf.baseName}.patched_contigs.gtf ${gtf.baseName}.patched_contigs.DEXSeq.gff
+        ~/bin/dexseq_prepare_annotation.py ${gtf.baseName}.patched_contigs.gtf ${gtf.baseName}.patched_contigs.DEXSeq.gff
         """
     }
 }
@@ -976,8 +976,8 @@ if(params.run_splicing_exp_quant){
 
         script:
         """
-        samtools view $leafcutter_bam | python $baseDir/bin/leafcutter/filter_cs.py | $baseDir/bin/leafcutter/sam2bed.pl --use-RNA-strand - ${leafcutter_bam.baseName}.bed
-        $baseDir/bin/leafcutter/bed2junc.pl ${leafcutter_bam.baseName}.bed ${leafcutter_bam.baseName}.junc
+        samtools view $leafcutter_bam | python ~/bin/leafcutter/filter_cs.py | ~/bin/leafcutter/sam2bed.pl --use-RNA-strand - ${leafcutter_bam.baseName}.bed
+        ~/bin/leafcutter/bed2junc.pl ${leafcutter_bam.baseName}.bed ${leafcutter_bam.baseName}.junc
         """
     }
 }
@@ -1000,7 +1000,7 @@ if(params.run_splicing_exp_quant){
         script:
         """
         tar -czf junction_files.tar.gz -T $junc_files
-        python $baseDir/bin/leafcutter/leafcutter_cluster.py -j $junc_files -r . -m ${params.leafcutter_min_split_reads} -l ${params.leafcutter_max_intron_length}
+        python ~/bin/leafcutter/leafcutter_cluster.py -j $junc_files -r . -m ${params.leafcutter_min_split_reads} -l ${params.leafcutter_max_intron_length}
         """
     }
 }
@@ -1032,7 +1032,7 @@ if (params.run_exon_quant){
 
         """
         samtools view -h -o ${bam.simpleName}.sam $bam
-        $baseDir/bin/dexseq/dexseq_count.py $pairEndness $rnastrandness $gff -a ${params.dexseq_min_align_quality} ${bam.simpleName}.sam ${bam.simpleName}.exoncount.txt
+        ~/bin/dexseq/dexseq_count.py $pairEndness $rnastrandness $gff -a ${params.dexseq_min_align_quality} ${bam.simpleName}.sam ${bam.simpleName}.exoncount.txt
         rm ${bam.simpleName}.sam
         """
     }
