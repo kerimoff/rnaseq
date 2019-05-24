@@ -8,7 +8,7 @@ channels:
 dependencies:
   - anaconda::openjdk=8.0.152 # Needed for FastQC - conda build hangs without this
   - bioconda::fastqc=0.11.8
-  - bioconda::star=2.6.1b
+  - bioconda::star=2.7.1a-0
   - bioconda::hisat2=2.1.0
   - bioconda::picard=2.18.15
   - bioconda::bioconductor-dupradar=1.10.0

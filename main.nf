@@ -44,6 +44,8 @@ def helpMessage() {
     Options:
       --genome                      Name of iGenomes reference
       --singleEnd                   Specifies that the input is single end reads
+      --droplet                     Name of droplet technology e.g. "--droplet 10x"
+
     Strandedness:
       --forward_stranded            The library is forward stranded
       --reverse_stranded            The library is reverse stranded
@@ -398,6 +400,8 @@ if(params.aligner == 'star' && !params.star_index.every() && genome_name){
         tag "$fasta"
         publishDir path: { params.saveReference ? "${params.outdir}/reference_genome" : params.outdir },
                    saveAs: { params.saveReference ? it : null }, mode: 'copy'
+
+        disk '100.GB'
 
         input:
         file fasta from ch_fasta_for_star_index
@@ -784,6 +788,36 @@ if(params.aligner == 'star'){
 
         samtools index ${prefix}Aligned.sortedByCoord.out.bam
         """
+
+        if (parameters.droplet && parameters.droplet == "10x"){
+          cdna_read = reads[0]
+          barcode_read = reads[1]
+          """
+          STAR --genomeDir $index \\
+               --sjdbGTFfile $gtf \\
+               --readFilesIn $barcode_read $cdna_read  \\
+               --runThreadN ${task.cpus} \\
+               --twopassMode Basic \\
+               --outWigType bedGraph \\
+               --outSAMtype BAM SortedByCoordinate $avail_mem \\
+               --readFilesCommand zcat \\
+               --runDirPerm All_RWX \\
+               --outFileNamePrefix $prefix $seqCenter \\
+               --soloType Droplet \\
+               --soloCBwhitelist
+
+          STAR \\
+            --runMode alignReads \\
+            --runThreadN $NSLOTS --genomeDir $index \\
+            --soloType Droplet \\
+            --soloCBwhitelist $soloCBwhitelist \
+            --readFilesIn "fastq"/"$sample""-R2.fastq.gz" "fastq"/"$sample""-R1.fastq.gz" \
+            --outFileNamePrefix STARsolo_out/"$sample"/ \
+            --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --twopassMode Basic --readFilesCommand zcat --sjdbOverhang 100
+
+          """
+        }
+
     }
     // Filter removes all 'aligned' channels that fail the check
     star_aligned
