@@ -400,8 +400,7 @@ if(params.aligner == 'star' && !params.star_index.every() && genome_name){
         tag "$fasta"
         publishDir path: { params.saveReference ? "${params.outdir}/reference_genome" : params.outdir },
                    saveAs: { params.saveReference ? it : null }, mode: 'copy'
-
-        disk '100.GB'
+        containerOptions "--storage-opt dm.basesize=100G"
 
         input:
         file fasta from ch_fasta_for_star_index
