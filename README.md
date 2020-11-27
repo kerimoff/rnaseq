@@ -1,3 +1,6 @@
+
+## Latest version of the eQTL Catalogue RNA-seq quantification workflow can be found here: [eQTL-Catalogue/rnaseq](https://github.com/eQTL-Catalogue/rnaseq).
+
 # ![nfcore/rnaseq](docs/images/nfcore-rnaseq_logo.png)
 
 [![Build Status](https://travis-ci.org/nf-core/rnaseq.svg?branch=master)](https://travis-ci.org/nf-core/rnaseq)
